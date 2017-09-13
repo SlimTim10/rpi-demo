@@ -3,50 +3,46 @@ import RPi.GPIO as GPIO
 from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
 from tweepy import Stream
+import yaml
 
-consumer_key=""
-consumer_secret=""
+LED_PIN = 17
+BUTTON_PIN = 22
+RGB_R_PIN = 10
+RGB_G_PIN = 11
+RGB_B_PIN = 9
 
-access_token=""
-access_token_secret=""
+def gpio_setup():
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setwarnings(False)
 
-GPIO.setmode(GPIO.BCM)
-GPIO.setwarnings(False)
-
-led_pin = 17
-button_pin = 22
-rgb_r_pin = 10
-rgb_g_pin = 11
-rgb_b_pin = 9
-
-GPIO.setup(led_pin, GPIO.OUT)
-GPIO.setup(rgb_r_pin, GPIO.OUT)
-GPIO.setup(rgb_g_pin, GPIO.OUT)
-GPIO.setup(rgb_b_pin, GPIO.OUT)
-GPIO.setup(button_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+    GPIO.setup(LED_PIN, GPIO.OUT)
+    GPIO.setup(RGB_R_PIN, GPIO.OUT)
+    GPIO.setup(RGB_G_PIN, GPIO.OUT)
+    GPIO.setup(RGB_B_PIN, GPIO.OUT)
+    GPIO.setup(BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
 def led_on():
-    GPIO.output(led_pin, GPIO.HIGH)
+    GPIO.output(LED_PIN, GPIO.HIGH)
 
 def led_off():
-    GPIO.output(led_pin, GPIO.LOW)
+    GPIO.output(LED_PIN, GPIO.LOW)
 
 def rgb_off():
-    GPIO.output(rgb_r_pin, GPIO.LOW)
-    GPIO.output(rgb_g_pin, GPIO.LOW)
-    GPIO.output(rgb_b_pin, GPIO.LOW)
+    GPIO.output(RGB_R_PIN, GPIO.LOW)
+    GPIO.output(RGB_G_PIN, GPIO.LOW)
+    GPIO.output(RGB_B_PIN, GPIO.LOW)
     
 def rgb_red():
     rgb_off()
-    GPIO.output(rgb_r_pin, GPIO.HIGH)
+    GPIO.output(RGB_R_PIN, GPIO.HIGH)
 
 def rgb_green():
     rgb_off()
-    GPIO.output(rgb_g_pin, GPIO.HIGH)
+    GPIO.output(RGB_G_PIN, GPIO.HIGH)
 
 def rgb_blue():
     rgb_off()
-    GPIO.output(rgb_b_pin, GPIO.HIGH)
+    GPIO.output(RGB_B_PIN, GPIO.HIGH)
 
 class StdOutListener(StreamListener):
     """ A listener handles tweets that are received from the stream.
@@ -60,29 +56,28 @@ class StdOutListener(StreamListener):
     def on_error(self, status):
         print(status)
 
-led_on()
-sleep(1)
-led_off()
+def twitter_setup():
+    l = StdOutListener()
+    auth = OAuthHandler(cfg['consumer_key'], cfg['consumer_secret'])
+    auth.set_access_token(cfg['access_token'], cfg['access_token_secret'])
 
-rgb_red()
-sleep(1)
-rgb_green()
-sleep(1)
-rgb_blue()
-sleep(1)
-rgb_off()
-sleep(1)
+    stream = Stream(auth, l)
+    stream.userstream(_with='user')
+    stream.filter(track=['red', 'green', 'blue'])
 
-l = StdOutListener()
-auth = OAuthHandler(consumer_key, consumer_secret)
-auth.set_access_token(access_token, access_token_secret)
+# Set up GPIO pins
+gpio_setup()
 
-stream = Stream(auth, l)
-stream.userstream(_with='user')
-stream.filter(track=['green'])
+# Get Twitter app settings
+with open('config.yaml', 'r') as f:
+    cfg = yaml.load(f)
 
+# Set up Twitter stream listening
+twitter_setup()
+
+# Main loop
 while True:
-    button = GPIO.input(button_pin)
+    button = GPIO.input(BUTTON_PIN)
     print(button)
     sleep(0.1)
 
