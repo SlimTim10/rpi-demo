@@ -1,5 +1,13 @@
 # Raspberry Pi Demo
 
+## GPIO Demo
+
+On button press, turns on the LED for one second, then back off.
+
+## Twitter Demo
+
+Listens to tweets on a specified user's Twitter stream. If the message contains any of the words "red", "green", "blue", "purple", or "orage", it sets the RGB LED to that colour.
+
 ## Wiring
 
 | Raspberry Pi | Component |
